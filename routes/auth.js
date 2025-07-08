@@ -13,7 +13,6 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ message: 'Credenciales incorrectas' });
     }
 
-    // Si pasa la validación
     res.status(200).json({
       message: 'Login exitoso',
       usuario: {
@@ -27,12 +26,13 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// Obtener pregunta de recuperación por nombre
+//  Obtener pregunta de recuperación por nombre
 router.post('/recuperar-pregunta', async (req, res) => {
   const { Nombre } = req.body;
 
   try {
     const usuario = await Usuario.findOne({ Nombre });
+
     if (!usuario) {
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
@@ -43,7 +43,7 @@ router.post('/recuperar-pregunta', async (req, res) => {
   }
 });
 
-// Validar respuesta para acceso
+// Validar respuesta para acceso y devolver contraseña
 router.post('/recuperar-respuesta', async (req, res) => {
   const { Nombre, respuesta } = req.body;
 
@@ -54,16 +54,17 @@ router.post('/recuperar-respuesta', async (req, res) => {
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
 
-    if (usuario['Pregunta de Recuperacion'] !== respuesta) {
+    if (usuario['Respuesta de Recuperacion'] !== respuesta) {
       return res.status(401).json({ message: 'Respuesta incorrecta' });
     }
 
-    // Acceso concedido
+    // Acceso concedido y se devuelve la contraseña
     res.status(200).json({
       message: 'Respuesta correcta. Acceso concedido.',
       usuario: {
         id: usuario._id,
-        nombre: usuario.Nombre
+        nombre: usuario.Nombre,
+        contraseña: usuario.Contraseña
       }
     });
   } catch (error) {
@@ -71,9 +72,9 @@ router.post('/recuperar-respuesta', async (req, res) => {
   }
 });
 
-// Registrar nuevo usuario
+//  Registrar nuevo usuario
 router.post('/registrar', async (req, res) => {
-  const { Nombre, Contraseña, Pregunta } = req.body;
+  const { Nombre, Contraseña, Pregunta, Respuesta } = req.body;
 
   try {
     // Verificar si ya existe
@@ -86,7 +87,8 @@ router.post('/registrar', async (req, res) => {
     const nuevoUsuario = new Usuario({
       Nombre,
       Contraseña,
-      "Pregunta de Recuperacion": Pregunta
+      "Pregunta de Recuperacion": Pregunta,
+      "Respuesta de Recuperacion": Respuesta
     });
 
     await nuevoUsuario.save();
