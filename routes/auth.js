@@ -93,7 +93,9 @@ router.post('/registrar', async (req, res) => {
 
     await nuevoUsuario.save();
 
-    res.status(201).json({
+    // Asegúrate que aquí sólo envías la respuesta UNA vez y no hay ningún middleware que la modifique después
+
+    return res.status(201).json({
       message: 'Usuario registrado exitosamente',
       usuario: {
         id: nuevoUsuario._id,
@@ -101,9 +103,10 @@ router.post('/registrar', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Error del servidor al registrar' });
+    console.error('Error en /registrar:', error);
+    return res.status(500).json({ message: 'Error del servidor al registrar' });
   }
 });
+
 
 module.exports = router;
