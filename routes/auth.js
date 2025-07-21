@@ -1,6 +1,48 @@
 const express = require('express');
+const jwt = require('jsonwebtoken');
 const router = express.Router();
 const Usuario = require('../models/Usuario');
+const tokensInvalidos = new Set();
+const {
+  generateAccessToken,
+  generateRefreshToken
+} = require('../services/tokenService');
+
+const {
+  generateAccessToken,
+  generateRefreshToken,
+  verifyRefreshToken
+} = require('../services/tokenService');
+
+// Ruta para refrescar el token
+router.post('/refresh-token', async (req, res) => {
+  const { refreshToken } = req.body;
+
+  if (!refreshToken) return res.status(401).json({ message: 'Refresh token requerido' });
+
+  try {
+    const decoded = verifyRefreshToken(refreshToken);
+    const usuario = await Usuario.findById(decoded.id);
+
+    if (!usuario || usuario.refreshToken !== refreshToken) {
+      return res.status(403).json({ message: 'Refresh token inválido o expirado' });
+    }
+
+    const newAccessToken = generateAccessToken(usuario);
+    const newRefreshToken = generateRefreshToken(usuario);
+
+    usuario.refreshToken = newRefreshToken;
+    await usuario.save();
+
+    res.json({
+      token: newAccessToken,
+      refreshToken: newRefreshToken
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(403).json({ message: 'Refresh token inválido o expirado' });
+  }
+});
 
 // Ruta de login
 router.post('/login', async (req, res) => {
@@ -13,8 +55,16 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ message: 'Credenciales incorrectas' });
     }
 
+    const accessToken = generateAccessToken(usuario);
+    const refreshToken = generateRefreshToken(usuario);
+
+    usuario.refreshToken = refreshToken;
+    await usuario.save();
+
     res.status(200).json({
       message: 'Login exitoso',
+      token: accessToken,
+      refreshToken,
       usuario: {
         id: usuario._id,
         nombre: usuario.Nombre
@@ -106,6 +156,41 @@ router.post('/registrar', async (req, res) => {
     console.error('Error en /registrar:', error);
     return res.status(500).json({ message: 'Error del servidor al registrar' });
   }
+});
+
+//cerrar sesión
+router.post('/logout', async (req, res) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  const usuario = await Usuario.findOne({ refreshToken: token });
+
+  if (usuario) {
+    usuario.refreshToken = null;
+    await usuario.save();
+  }
+
+  return res.status(200).json({ message: 'Sesión cerrada. Token invalidado.' });
+});
+
+// Middleware para verificar el token
+const verificarToken = (req, res, next) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(401).json({ message: 'Token requerido' });
+
+  if (tokensInvalidos.has(token)) {
+    return res.status(401).json({ message: 'Token inválido o expirado' });
+  }
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+    if (err) return res.status(401).json({ message: 'Token inválido' });
+
+    req.usuario = decoded;
+    next();
+  });
+};
+
+// Ruta protegida 
+router.get('/protegido', verificarToken, (req, res) => {
+  res.json({ message: 'Ruta protegida', usuario: req.usuario });
 });
 
 
