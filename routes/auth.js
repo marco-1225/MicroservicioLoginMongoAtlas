@@ -3,10 +3,6 @@ const jwt = require('jsonwebtoken');
 const router = express.Router();
 const Usuario = require('../models/Usuario');
 const tokensInvalidos = new Set();
-const {
-  generateAccessToken,
-  generateRefreshToken
-} = require('../services/tokenService');
 
 const {
   generateAccessToken,
