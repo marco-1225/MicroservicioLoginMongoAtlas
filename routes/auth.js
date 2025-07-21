@@ -155,15 +155,12 @@ router.post('/registrar', async (req, res) => {
 });
 
 //cerrar sesión
-router.post('/logout', async (req, res) => {
-  const token = req.headers.authorization?.split(' ')[1];
-  const usuario = await Usuario.findOne({ refreshToken: token });
-
+router.post('/logout', verificarToken, async (req, res) => {
+  const usuario = await Usuario.findById(req.usuario.id);
   if (usuario) {
     usuario.refreshToken = null;
     await usuario.save();
   }
-
   return res.status(200).json({ message: 'Sesión cerrada. Token invalidado.' });
 });
 
