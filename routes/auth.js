@@ -10,7 +10,7 @@ const {
   verifyRefreshToken
 } = require('../services/tokenService');
 
-const SECRET_KEY = process.env.JWT_SECRET || 'eW91cl9zZWNyZXRfa2V5X2hlcmU=';
+const SECRET_KEY = process.env.JWT_SECRET || 'xR4pZ+YJvLvk0b2Pn8qTLr5E3W1KyX4VJ8t7yA0ZuB0=';
 
 
 // Middleware para verificar el token de acceso
@@ -31,38 +31,40 @@ const verificarToken = (req, res, next) => {
 
 // LOGIN
 router.post('/login', async (req, res) => {
-  const { Nombre, Contraseña } = req.body;
+  const { NombreUsuario, Password } = req.body;
 
   try {
-    // Busca usuario con mismo Nombre y Contraseña en texto plano
-    const usuario = await Usuario.findOne({ Nombre, Contraseña });
+    // Busca usuario con mismo NombreUsuario y Password en texto plano (ojo, inseguro)
+    const usuario = await Usuario.findOne({ NombreUsuario, Password });
     if (!usuario) {
       return res.status(401).json({ message: 'Credenciales incorrectas' });
     }
 
-    // Genera tokens con el usuario encontrado
+    // Genera tokens
     const accessToken = generateAccessToken(usuario);
-    const refreshToken = generateRefreshToken(usuario);
+    const refreshToken = generateRefreshToken();
 
-    // Guarda el refresh token en BD para el usuario
+    // Guarda refresh token y expiración (7 días) en BD
     usuario.refreshToken = refreshToken;
+    usuario.refreshTokenExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     await usuario.save();
 
-    // Devuelve tokens y usuario
+    // Respuesta
     res.status(200).json({
       message: 'Login exitoso',
       token: accessToken,
-      refreshToken,
+      refreshToken: refreshToken,
       usuario: {
         id: usuario._id,
-        nombre: usuario.Nombre
+        nombre: usuario.NombreUsuario
       }
     });
   } catch (error) {
-    console.error(error);
+    console.error('Error en /login:', error);
     res.status(500).json({ message: 'Error del servidor' });
   }
 });
+
 
 // Refrescar token
 router.post('/refresh-token', async (req, res) => {

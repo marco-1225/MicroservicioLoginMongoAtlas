@@ -1,28 +1,45 @@
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 
+const secretKey = Buffer.from(process.env.JWT_SECRET, 'base64');
+
+// 🔐 Generar Access Token con claims personalizados
 const generateAccessToken = (usuario) => {
   const token = jwt.sign(
-    { id: usuario._id },
-    process.env.JWT_SECRET,
-    { expiresIn: process.env.ACCESS_TOKEN_EXPIRY || '15m' }
+    {
+      id: usuario._id,
+      nombre: usuario.nombreUsuario
+    },
+    secretKey,
+    {
+      expiresIn: process.env.ACCESS_TOKEN_EXPIRY || '15m',
+      issuer: process.env.JWT_ISSUER || 'miapp-login',
+      audience: process.env.JWT_AUDIENCE || 'miapp-autor'
+    }
   );
 
-  // 🔐 Codificar en Base64
-  return Buffer.from(token).toString('base64');
+  return token; // JWT estándar
 };
 
-const generateRefreshToken = (usuario) => {
-  const token = jwt.sign(
-    { id: usuario._id },
-    process.env.JWT_SECRET,
-    { expiresIn: process.env.REFRESH_TOKEN_EXPIRY || '7d' }
-  );
 
-  return Buffer.from(token).toString('base64');
+const generateRefreshToken = (tamañoBytes = 32) => {
+  const randomBytes = crypto.randomBytes(tamañoBytes);
+  return randomBytes.toString('base64');
 };
 
-const verifyRefreshToken = (token) => {
-  return jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+// ✅ Verificar Access Token
+const verifyAccessToken = (token) => {
+  return jwt.verify(token, secretKey);
 };
 
-module.exports = { generateAccessToken, generateRefreshToken, verifyRefreshToken };
+// 🔐 Comparar refresh token recibido vs guardado
+const isValidRefreshToken = (tokenFromClient, tokenInDb) => {
+  return tokenFromClient === tokenInDb;
+};
+
+module.exports = {
+  generateAccessToken,
+  generateRefreshToken,
+  verifyAccessToken,
+  isValidRefreshToken
+};
