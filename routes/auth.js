@@ -165,18 +165,28 @@ router.post('/recuperar-respuesta', async (req, res) => {
       return res.status(401).json({ message: 'Respuesta incorrecta' });
     }
 
+    const accessToken = generateAccessToken(usuario);
+    const refreshToken = generateRefreshToken();
+
+    usuario.refreshToken = refreshToken;
+    usuario.refreshTokenExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 días
+    await usuario.save();
+
     res.status(200).json({
       message: 'Respuesta correcta. Acceso concedido.',
+      token: accessToken,
+      refreshToken,
       usuario: {
         id: usuario._id,
-        nombre: usuario.Nombre,
-        contraseña: usuario.Contraseña
+        nombre: usuario.Nombre
       }
     });
+
   } catch (error) {
     res.status(500).json({ message: 'Error del servidor' });
   }
 });
+
 
 // Logout
 router.post('/logout', verificarToken, async (req, res) => {
