@@ -187,7 +187,7 @@ router.post('/cambiar-contrasena', async (req, res) => {
   const { nombre, nuevaContrasena } = req.body;
 
   if (!nombre || !nuevaContrasena) {
-    return res.status(400).json({ message: 'Se requieren nombre y nueva contraseña' });
+    return res.status(400).json({ message: 'Faltan campos requeridos' });
   }
 
   try {
