@@ -80,21 +80,22 @@ router.post('/registrar', async (req, res) => {
 
     await nuevoUsuario.save();
 
-    // ✅ Generar token
-    const token = jwt.sign(
-      { id: nuevoUsuario._id, Nombre: nuevoUsuario.Nombre },
-      SECRET_KEY,
-      { expiresIn: '1h' }
-    );
+    // ✅ Usa los mismos generadores que en login
+    const accessToken = generateAccessToken(nuevoUsuario);
+    const refreshToken = generateRefreshToken();
 
-    // ✅ Enviar token y usuario al frontend
+    nuevoUsuario.refreshToken = refreshToken;
+    nuevoUsuario.refreshTokenExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 días
+    await nuevoUsuario.save();
+
     return res.status(201).json({
       message: 'Usuario registrado exitosamente',
       usuario: {
         id: nuevoUsuario._id,
         nombre: nuevoUsuario.Nombre
       },
-      token
+      token: accessToken,
+      refreshToken
     });
 
   } catch (error) {
