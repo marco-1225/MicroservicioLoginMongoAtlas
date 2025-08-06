@@ -183,22 +183,18 @@ router.get('/protegido', verificarToken, (req, res) => {
 });
 
 // Cambiar contraseña sin encriptar
-router.post('/cambiar-contrasena', verificarToken, async (req, res) => {
-  const { contrasenaActual, nuevaContrasena } = req.body;
+router.post('/cambiar-contrasena', async (req, res) => {
+  const { nombre, nuevaContrasena } = req.body;
 
-  if (!contrasenaActual || !nuevaContrasena) {
-    return res.status(400).json({ message: 'Se requieren ambas contraseñas' });
+  if (!nombre || !nuevaContrasena) {
+    return res.status(400).json({ message: 'Se requieren nombre y nueva contraseña' });
   }
 
   try {
-    const usuario = await Usuario.findById(req.usuario.id);
+    const usuario = await Usuario.findOne({ Nombre: nombre });
 
     if (!usuario) {
       return res.status(404).json({ message: 'Usuario no encontrado' });
-    }
-
-    if (usuario.Contraseña !== contrasenaActual) {
-      return res.status(401).json({ message: 'La contraseña actual es incorrecta' });
     }
 
     usuario.Contraseña = nuevaContrasena;
@@ -210,5 +206,6 @@ router.post('/cambiar-contrasena', verificarToken, async (req, res) => {
     res.status(500).json({ message: 'Error del servidor' });
   }
 });
+
 
 module.exports = router;
