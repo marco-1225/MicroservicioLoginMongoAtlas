@@ -193,7 +193,7 @@ router.get('/protegido', verificarToken, (req, res) => {
   res.json({ message: 'Ruta protegida', usuario: req.usuario });
 });
 
-// Cambiar contraseña sin encriptar
+// Cambiar contraseña
 router.post('/cambiar-contrasena', async (req, res) => {
   const { nombre, nuevaContrasena } = req.body;
 
@@ -217,6 +217,5 @@ router.post('/cambiar-contrasena', async (req, res) => {
     res.status(500).json({ message: 'Error del servidor' });
   }
 });
-
 
 module.exports = router;
