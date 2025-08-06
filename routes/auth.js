@@ -80,13 +80,23 @@ router.post('/registrar', async (req, res) => {
 
     await nuevoUsuario.save();
 
+    // ✅ Generar token
+    const token = jwt.sign(
+      { id: nuevoUsuario._id, Nombre: nuevoUsuario.Nombre },
+      SECRET_KEY,
+      { expiresIn: '1h' }
+    );
+
+    // ✅ Enviar token y usuario al frontend
     return res.status(201).json({
       message: 'Usuario registrado exitosamente',
       usuario: {
         id: nuevoUsuario._id,
         nombre: nuevoUsuario.Nombre
-      }
+      },
+      token
     });
+
   } catch (error) {
     console.error('Error en /registrar:', error);
     return res.status(500).json({ message: 'Error del servidor al registrar' });
